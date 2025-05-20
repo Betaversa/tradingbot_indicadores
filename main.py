@@ -1,0 +1,2 @@
+print("TradingBot funcionando correctamente.")
+
