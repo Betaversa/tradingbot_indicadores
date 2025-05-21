@@ -5,8 +5,8 @@ from binance.exceptions import BinanceAPIException
 import os
 
 # Variables de entorno (Render → Environment)
-API_KEY = os.getenv("BINANCE_API_KEY")
-API_SECRET = os.getenv("BINANCE_API_SECRET")
+API_KEY = os.getenv("tcLNGvPdSkDZBc0c0qGirQKzd9JpaP9e0AV8184kpLdFL9591sJZyFIoVVOAj2V0")
+API_SECRET = os.getenv("MJrrgZB5ih55w01N2DY9KbCvDgCfmVSk3r93vKnW2ZPadEsJj7fSMUsvnn7iWq5m")
 
 client = Client(API_KEY, API_SECRET)
 
