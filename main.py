@@ -1,60 +1,44 @@
+import os
 import time
-import pandas as pd
+import logging
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
-import os
 
-# Variables de entorno (Render → Environment)
-API_KEY = os.getenv("tcLNGvPdSkDZBc0c0qGirQKzd9JpaP9e0AV8184kpLdFL9591sJZyFIoVVOAj2V0")
-API_SECRET = os.getenv("MJrrgZB5ih55w01N2DY9KbCvDgCfmVSk3r93vKnW2ZPadEsJj7fSMUsvnn7iWq5m")
+# Configuración de logging para debug
+logging.basicConfig(level=logging.INFO)
 
+# 🚀 Claves de API desde las variables de entorno
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
+
+# 🔁 Usar la URL del entorno de PRUEBAS de Binance
+BASE_URL = 'https://testnet.binance.vision/api'
+
+# Instanciar cliente Binance apuntando a TESTNET
 client = Client(API_KEY, API_SECRET)
+client.API_URL = BASE_URL
 
-SYMBOL = "BTCUSDT"
-INTERVAL = Client.KLINE_INTERVAL_1MINUTE
-LIMIT = 100
+# 📊 Parámetros del bot
+SYMBOL = 'BTCUSDT'
+INTERVAL = '1m'
+LIMIT = 20
 
-def get_klines():
+def get_price():
     try:
-        klines = client.get_klines(symbol=SYMBOL, interval=INTERVAL, limit=LIMIT)
-        df = pd.DataFrame(klines, columns=[
-            "open_time", "open", "high", "low", "close", "volume",
-            "close_time", "quote_asset_volume", "number_of_trades",
-            "taker_buy_base_asset_volume", "taker_buy_quote_asset_volume", "ignore"
-        ])
-        df["close"] = df["close"].astype(float)
-        return df
+        ticker = client.get_symbol_ticker(symbol=SYMBOL)
+        price = float(ticker['price'])
+        logging.info(f"💰 Precio actual de {SYMBOL}: {price}")
+        return price
     except BinanceAPIException as e:
-        print("Error al obtener datos:", e)
+        logging.error(f"❌ Error API Binance: {e}")
         return None
 
-def calculate_indicators(df):
-    df["EMA20"] = df["close"].ewm(span=20).mean()
-    delta = df["close"].diff()
-    gain = delta.where(delta > 0, 0)
-    loss = -delta.where(delta < 0, 0)
-    avg_gain = gain.rolling(window=14).mean()
-    avg_loss = loss.rolling(window=14).mean()
-    rs = avg_gain / avg_loss
-    df["RSI"] = 100 - (100 / (1 + rs))
-    return df
-
-def trading_logic(df):
-    last_row = df.iloc[-1]
-    if last_row["RSI"] < 30 and last_row["close"] > last_row["EMA20"]:
-        print("📈 Señal de COMPRA detectada.")
-        # client.order_market_buy(symbol=SYMBOL, quantity=0.001)
-    elif last_row["RSI"] > 70 and last_row["close"] < last_row["EMA20"]:
-        print("📉 Señal de VENTA detectada.")
-        # client.order_market_sell(symbol=SYMBOL, quantity=0.001)
-    else:
-        print("⏳ Sin señales claras.")
+def main_loop():
+    logging.info("🚀 Iniciando Trading Bot en Testnet...")
+    while True:
+        price = get_price()
+        # Aquí podrías aplicar lógica con RSI, EMA, etc.
+        time.sleep(60)  # Espera 60 segundos entre consultas
 
 if __name__ == "__main__":
-    print("🔄 TradingBot corriendo...")
-    while True:
-        df = get_klines()
-        if df is not None:
-            df = calculate_indicators(df)
-            trading_logic(df)
-        time.sleep(10)
+    main_loop()
